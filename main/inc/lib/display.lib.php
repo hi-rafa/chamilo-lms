@@ -1601,7 +1601,13 @@ class Display
                         api_get_user_id(),
                         $totalDuration
                     );
-                    $daysLeftViewBlock = ($daysLeft===false)? sprintf(get_lang('SessionDurationNotStarted'), $totalDuration) : sprintf(get_lang('SessionDurationXDaysLeft'), $daysLeft);
+                    
+                    if($daysLeft === false) {
+                        $daysLeftViewBlock = sprintf(get_lang('SessionDurationNotStarted'), $totalDuration);
+                    }else {
+                        $daysLeftViewBlock = sprintf(get_lang('SessionDurationXDaysLeft'), $daysLeft);
+                    }
+                    
                     $session['duration'] = $daysLeftViewBlock;
                 }
                 $active = true;
