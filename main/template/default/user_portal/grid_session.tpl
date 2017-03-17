@@ -25,7 +25,11 @@
                 {% endif %}
                 <span>
                     <i class="fa fa-calendar" aria-hidden="true"></i>
-                    {{ row.date }}
+                    {% if row.date != '' %}
+                        {{ row.date }}
+                    {% elseif row.duration != '' %}
+                        {{ row.duration }}
+                    {% endif %}
                 </span>
             </div>
             <div class="grid-courses">
