@@ -1602,9 +1602,9 @@ class Display
                         $totalDuration
                     );
                     
-                    if($daysLeft === false) {
+                    if ($daysLeft === false) {
                         $daysLeftViewBlock = sprintf(get_lang('SessionDurationNotStarted'), $totalDuration);
-                    }else {
+                    } else {
                         $daysLeftViewBlock = sprintf(get_lang('SessionDurationXDaysLeft'), $daysLeft);
                     }
                     
