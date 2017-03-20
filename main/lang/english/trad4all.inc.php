@@ -142,7 +142,6 @@ $UserNeverAccessedSessionDefaultDurationIsX = "This user never accessed this ses
 $SessionDurationEdit = "Edit session duration";
 $EditUserSessionDuration = "User's session duration edition";
 $SessionDurationXDaysLeft = "This session has a maximum duration. Only %s days to go.";
-$SessionDurationNotStarted = "This session has a maximum duration of %s.";
 $NextTopic = "Next topic";
 $CurrentTopic = "Current topic";
 $ShowFullCourseAdvance = "Show course planning";
