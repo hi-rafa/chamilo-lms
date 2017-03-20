@@ -292,3 +292,5 @@ $_configuration['system_stable'] = NEW_VERSION_STABLE;
 // $_configuration['certificate_pdf_orientation'] = 'landscape'; // It can be 'portrait' or 'landscape'
 // Hide main navigation menu (left column in userportal)
 // $_configuration['hide_main_navigation_menu'] = false;
+// Hide rating elements in pages ("Courses catalog" & "Most Popular courses")
+// $_configuration['hide_course_rating'] = false;

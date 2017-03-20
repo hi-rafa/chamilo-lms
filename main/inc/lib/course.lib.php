@@ -4886,8 +4886,10 @@ class CourseManager
             /* get_lang('Description') */
             $my_course['teachers'] = CourseManager::getTeachersFromCourse($course_info['real_id'], false);
             $point_info = self::get_course_ranking($course_info['real_id'], 0);
-            $my_course['rating_html'] = Display::return_rating_system('star_' . $course_info['real_id'],
-                $ajax_url . '&course_id=' . $course_info['real_id'], $point_info);
+            if (api_get_configuration_value('hide_course_rating') === false) {
+                $my_course['rating_html'] = Display::return_rating_system( 'star_' . $course_info['real_id'],
+                    $ajax_url . '&course_id=' . $course_info['real_id'], $point_info );
+            }
 
             $hotCourses[] = $my_course;
         }
