@@ -156,6 +156,13 @@ if ($form->validate()) {
     $duration = isset($params['duration']) ? $params['duration'] : null;
     if ($params['access'] == 1) {
         $duration = null;
+    } else {
+        $startDate = null;
+        $endDate = null;
+        $displayStartDate = null;
+        $displayEndDate = null;
+        $coachStartDate = null;
+        $coachEndDate = null;
     }
     $description = $params['description'];
     $showDescription = isset($params['show_description']) ? 1: 0;
