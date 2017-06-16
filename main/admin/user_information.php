@@ -248,13 +248,6 @@ foreach ($data as $label => $item) {
     $row++;
 }
 $trackingInformation = $table->toHtml();
-
-$tbl_session_course = Database::get_main_table(TABLE_MAIN_SESSION_COURSE);
-$tbl_session_course_user = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
-$tbl_session = Database::get_main_table(TABLE_MAIN_SESSION);
-$tbl_course = Database::get_main_table(TABLE_MAIN_COURSE);
-$tbl_user = Database::get_main_table(TABLE_MAIN_USER);
-
 $socialInformation = '';
 
 /**
@@ -325,7 +318,7 @@ if (count($sessions) > 0) {
         $csvContent[] = $headerList;
         foreach ($session_item['courses'] as $my_course) {
             $courseInfo = api_get_course_info_by_id($my_course['real_id']);
-            $sessionStatus = SessionManager::get_user_status_in_session(
+            $sessionStatus = SessionManager::get_user_status_in_course_session(
                 $userId,
                 $courseInfo['real_id'],
                 $id_session

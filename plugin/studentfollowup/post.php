@@ -2,7 +2,7 @@
 /* For licensing terms, see /license.txt */
 
 use Doctrine\Common\Collections\Criteria;
-use Doctrine\ORM\Tools\Pagination\Paginator;
+use Chamilo\PluginBundle\Entity\StudentFollowUp\CarePost;
 
 require_once __DIR__.'/../../main/inc/global.inc.php';
 
@@ -35,17 +35,49 @@ if ($showPrivate == false) {
 
 $criteria->andWhere(Criteria::expr()->eq('id', $postId));
 $qb
-    ->select('p')
+    ->select('distinct p')
     ->from('ChamiloPluginBundle:StudentFollowUp\CarePost', 'p')
     ->addCriteria($criteria)
     ->setMaxResults(1)
 ;
-
 $query = $qb->getQuery();
+
+/** @var CarePost $post */
 $post = $query->getOneOrNullResult();
+
+// Get related posts (post with same parent)
+$relatedPosts = [];
+if ($post) {
+    $qb = $em->createQueryBuilder();
+    $criteria = Criteria::create();
+
+    if (!empty($post->getParent())) {
+        $criteria->where(Criteria::expr()->in('parent', [$post->getParent()->getId(), $post->getId()]));
+    } else {
+        $criteria->where(Criteria::expr()->eq('parent', $post->getId()));
+    }
+
+    if ($showPrivate == false) {
+        $criteria->andWhere(Criteria::expr()->eq('private', false));
+    }
+
+    $criteria->orWhere(Criteria::expr()->eq('id', $post->getId()));
+
+    $qb
+        ->select('p')
+        ->distinct()
+        ->from('ChamiloPluginBundle:StudentFollowUp\CarePost', 'p')
+        ->addCriteria($criteria)
+        ->orderBy('p.createdAt', 'desc')
+    ;
+    $query = $qb->getQuery();
+    $relatedPosts = $query->getResult();
+}
+//var_dump($post->getTitle());
 
 $tpl = new Template($plugin->get_lang('plugin_title'));
 $tpl->assign('post', $post);
+$tpl->assign('related_posts', $relatedPosts);
 $url = api_get_path(WEB_PLUGIN_PATH).'/studentfollowup/post.php?student_id='.$studentId;
 $tpl->assign('post_url', $url);
 $tpl->assign(
@@ -56,6 +88,8 @@ $tpl->assign(
     )
 );
 $tpl->assign('information_icon', Display::return_icon('info.png'));
+$tpl->assign('student_info', api_get_user_info($studentId));
+$tpl->assign('care_title', $plugin->get_lang('CareDetailView'));
 
 $content = $tpl->fetch('/'.$plugin->get_name().'/view/post.html.twig');
 // Assign into content

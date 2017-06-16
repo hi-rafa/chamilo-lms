@@ -4008,7 +4008,6 @@ $ApprovalForNewAccount = "Validación de una nueva cuenta";
 $ManageUser = "Gestión de usuario";
 $SubscribeUserToCourseAsTeacher = "Inscribir profesores";
 $PasswordEncryptedForSecurity = "Su contraseña está encriptada para su seguridad. Por ello, cuando haya pulsado en el enlace para regenerar su clave se le remitirá un nuevo correo que contendrá su contraseña.";
-$SystemUnableToSendEmailContact = "El sistema no ha podido enviarle el correo electrónico";
 $OpenIDCouldNotBeFoundPleaseRegister = "Este OpenID no se encuentra en nuestra base de datos. Por favor, regístrese para obtener una cuenta. Si ya tiene una cuenta con nosotros,  edite su perfil en la misma para añadir este OpenID";
 $UsernameMaxXCharacters = "El nombre de usuario puede tener como máximo una longitud de %s caracteres";
 $PictureUploaded = "Su imagen ha sido enviada";
@@ -5345,8 +5344,8 @@ $AddTimeLimit = "Añadir límite de tiempo";
 $EditTimeLimit = "Editar límite de tiempo";
 $TheTimeLimitsAreReferential = "El plazo de una categoría es referencial, no afectará a los límites de una sesión de formación";
 $FieldTypeTag = "User tag";
-$SendEmailToAdminTitle = "Aviso por correo electrónico, de la creación de un nuevo curso";
-$SendEmailToAdminComment = "Enviar un correo electrónico al administrador de la plataforma, cada vez que un profesor cree un nuevo curso";
+$SendEmailToAdminTitle = "Aviso e-mail a la creación de nuevos cursos";
+$SendEmailToAdminComment = "Enviar un correo electrónico al administrador de la plataforma cada vez que un profesor cree un nuevo curso";
 $UserTag = "Etiqueta de usuario";
 $SelectSession = "Seleccionar sesión";
 $SpecialCourse = "Curso especial";
@@ -5898,7 +5897,7 @@ $UnsubscribeUsersAlreadyAddedInCourse = "Desinscribir todos los alumnos ya inscr
 $ImportUsers = "Importar usuarios";
 $HelpFolderLearningPaths = "INFORMACIÓN SOLO VISIBLE POR EL PROFESORADO:\nEsta carpeta contiene los documentos que se crean desde la herramienta Lecciones. Aquí puede editar los HTML que se hayan creado al realizar una importación desde la herramienta Lecciones, por ejemplo desde Chamilo Rapid. Se recomienda mantener invisible esta carpeta a los alumnos.";
 $YouWillBeRedirectedInXSeconds = "Un momento por favor. Será re-dirigido a otra página dentro de %s segundos...";
-$ToProtectYourSiteMakeXReadOnlyAndDeleteY = "Para proteger su instalación, ponga la carpeta %s en solo lectura (chmod -r 0555 bajo Linux) y borre completamente la carpeta %s.";
+$ToProtectYourSiteMakeXReadOnlyAndDeleteY = "Para proteger su instalación, ponga la carpeta %s en solo lectura (chmod -R 0555 bajo Linux) y borre completamente la carpeta %s.";
 $NumberOfCoursesPublic = "Número de cursos públicos";
 $NumberOfCoursesOpen = "Número de cursos abiertos";
 $NumberOfCoursesPrivate = "Número de cursos privados";
@@ -7041,7 +7040,7 @@ $LdapDescriptionComment = "<div class=\"alert alert-info\">
     <p>Los valores del Array son &lt;chamilo_field&gt; =&gt; &gt;ldap_field&gt;</p><p>
     </p>
     <h4>II. Activar la atenticación LDAP</h4>
-    <h5>Editar el archivo main/inc/conf/configuration.php </h5>
+    <h5>Editar el archivo app/config/configuration.php </h5>
     <p>-&gt; Descomentar las líneas:</p>
     <ul>
         <li>
@@ -7076,7 +7075,7 @@ Modificar valores de \$result con el nombre de los atributos de Shibboleth
 Ir a Plug-in para añadir el botón 'Shibboleth Login' en su campus de Chamilo.";
 $LdapDescriptionTitle = "<h3>Autentificacion LDAP</h3>";
 $FacebookMainActivateTitle = "Autenticación con Facebook";
-$FacebookMainActivateComment = "<p>En primer lugar, usted tiene que crear una Aplicación Facebook (ver <a href='https://developers.facebook.com/apps'>https://developers.facebook.com/apps</a>) con su cuenta de Facebook. En la configuración de Aplicaciones de Facebook, el valor de la URL del sitio debe ser la URL de este campus. Tener habilitada la opción Web OAuth Login. Y agregar la URL de tu campus en el campo Valid OAuth redirect URIs</p><p>Descomenta la línea <code>&#36;_configuration['facebook_auth'] = 1;</code> para habilitar la Autenticación con Facebook</p><p>Luego, edite el archivo <code>/app/config/auth.conf.php</code> e ingresa los valores de '<code>appId</code>' y '<code>secret</code>' para <code>&#36;facebook_config</code>.</p><p>Ir a <a href='settings.php?category=Plugins'>Plugins</a> para agregar un botón configurable de <em>Incio de sesión con Facebook</em> para su campus Chamilo.</p>";
+$FacebookMainActivateComment = "<p>En primer lugar, usted tiene que crear una Aplicación Facebook (ver <a href='https://developers.facebook.com/apps'>https://developers.facebook.com/apps</a>) con su cuenta de Facebook. En la configuración de Aplicaciones de Facebook, el valor de la URL del sitio debe ser la URL de este campus. Tener habilitada la opción Web OAuth Login. Y agregar la URL de tu campus en el campo Valid OAuth redirect URIs</p><p>Descomenta la línea <code>&#36;_configuration['facebook_auth'] = 1;</code> para habilitar la Autenticación con Facebook</p><p>Luego, edite el archivo <code>app/config/auth.conf.php</code> e ingresa los valores de '<code>appId</code>' y '<code>secret</code>' para <code>&#36;facebook_config</code>.</p><p>Ir a <a href='settings.php?category=Plugins'>Plugins</a> para agregar un botón configurable de <em>Incio de sesión con Facebook</em> para su campus Chamilo.</p>";
 $AnnouncementForGroup = "Anuncios para un grupo";
 $AllGroups = "Todos los grupos";
 $LanguagePriority1Title = "Prioridad del idioma 1";
@@ -8022,4 +8021,15 @@ $ReadingQuestionCongratsSpeedXReachedForYWords = "Felicitaciones, ha alcanzado l
 $ReadingComprehensionLevelX = "%s palabras por minuto";
 $TutorXIsNotSubscribedToCourse = "El tutor %s no está inscrito a este curso";
 $UpdateTitleInLps = "Actualizar este título en las lecciones";
+$WebRTCDialogHelp = "Para habilitar la el video chat en tu navegador (si este lo soporta), asegúrese de hacer click en el ícono de información en la izquierda de la URL para autorizar el uso de su cámara web y micrófono.";
+$UpdateFile = "Actualizar archivo";
+$SendEmailToTeacherWhenStudentStartQuiz = "Enviar un correo al profesor cuando el estudiante inicia un ejercicio";
+$SendEmailToTeacherWhenStudentEndQuiz = "Enviar un correo al profesor cuando el estudiante termina un ejercicio";
+$SendEmailToTeacherWhenStudentEndQuizOnlyIfOpenQuestion = "Enviar un correo al profesor cuando el estudiante termina un ejercicio, solo si ha respondido a una pregunta abierta";
+$SendEmailToTeacherWhenStudentEndQuizOnlyIfOralQuestion = "Enviar un correo al profesor cuando el estudiante termina un ejercicio, solo si ha respondido a una pregunta oral";
+$StudentStartExercise = "Un ejercicio/examen ha sido iniciado por un estudiante";
+$TempScoreXQuestionsNotCorrectedYet = "Score temporaire: %s pregunta(s) abierta(s) no corregida(s) todavía.";
+$Annotation = "Anotación";
+$TeacherPicture = "Foto del profesor";
+$FeedbackIfNotCorrect = "Feedback si no es correcta";
 ?>

@@ -2046,7 +2046,7 @@ $UsersWereEdited = "Benutzer-Zugänge wurden aktualisiert";
 $AtLeastOneUserAndOneURL = "Mindestens ein Benutzer und eine URL müssen ausgewählt sein";
 $UsersBelongURL = "Die Benutzer-Zugänge wurden der URL zugefügt";
 $LPTestScore = "Kurs-Bewertung";
-$ScormAndLPTestTotalAverage = "Durchschnittliches Ergebnisse der Tests in den Lernpfaden";
+$ScormAndLPTestTotalAverage = "Durchschnittliches Ergebnis der Tests in den Lernpfaden";
 $ImportUsersToACourse = "Importiere Benutzer-Liste";
 $ImportCourses = "Importiere Kurs-Liste";
 $ManageUsers = "Benutzer verwalten";
@@ -3969,7 +3969,6 @@ $ApprovalForNewAccount = "Genehmigung für neuen Zugang";
 $ManageUser = "Benutzer verwalten";
 $SubscribeUserToCourseAsTeacher = "Als Kursleiter in diesen Kurs einschreiben";
 $PasswordEncryptedForSecurity = "Ihr Passwort wurde zur Sicherheit verschlüsselt. Daher wird nach dem Klick auf den Link eine E-Mail mit Ihrem Passwort an Ihre E-Mail Adresse verschickt.";
-$SystemUnableToSendEmailContact = "System konnte E-Mail Kontakt nicht versenden";
 $OpenIDCouldNotBeFoundPleaseRegister = "Diese OpenID konnte in unserer Datenbank nicht gefunden werden. Registrieren Sie sich bitte für einen neuen Zugang. Sollten Sie bereits einen Zugang bei uns haben, bearbeiten Sie bitte Ihr Profil in Ihrem Zugang, und fügen Sie diese OpenID hinzu.";
 $UsernameMaxXCharacters = "Der Benutzername darf höchstens %s Zeichen lang sein";
 $PictureUploaded = "Ihr Bild wurde hochgeladen";
@@ -6621,10 +6620,10 @@ $CertificateOnlineLink = "Link zum Zertifikat";
 $NewExercises = "Neue Tests";
 $MyAverage = "Mein Durchschnitt";
 $AllAttempts = "Alle Versuche";
-$QuestionsToReview = "Fragen die überprüft werden müssen";
+$QuestionsToReview = "Zu wiederholende Fragen";
 $QuestionWithNoAnswer = "Fragen ohne Antworten";
 $ValidateAnswers = "Antworten bestätigen";
-$ReviewQuestions = "Ausgewählte Fragen bewerten";
+$ReviewQuestions = "Ausgewählte Fragen wiederholen";
 $YouTriedToResolveThisExerciseEarlier = "Sie haben bereits früher versucht den Test zu lösen";
 $NoCookies = "Der Browser unterstützt keine Cookies. Chamilo benötigt \"Cookies\", um gewisse Dinge (wie z.B. Lernfortschritt oder Login-Status) temporär zu speichern. Dies bedeutet: ohne Cookies kein Login. Bitte im Browser daher Cookies erlauben, und danach diese Seite neu laden.";
 $NoJavascript = "Der Browser unterstützt kein JavaScript. Chamilo benötigt JavaScript, um ein möglichst angenehmes Lernerlebnis zu gewährleisten. Das bedeutet: viele Features werden funktionieren, aber der ein oder andere Effekt in Sachen Benutzerfreundlichkeit könnte ausbleiben. Daher ist es ratsam, JavaScript im Browser zu aktivieren, und diese Seite neu zu laden.";
@@ -6794,7 +6793,7 @@ $TextWhenFinished = "Text, der am Ende des Tests erscheint";
 $Validated = "Bestätigt";
 $NotValidated = "Nicht bestätigt";
 $Revised = "Korrigiert";
-$SelectAQuestionToReview = "Wählen Sie eine Frage zur Korrektur";
+$SelectAQuestionToReview = "Wählen Sie eine Frage zur Wiederholung";
 $ReviewQuestionLater = "Korrigiere Frage später";
 $NumberStudentWhoSelectedIt = "Anzahl Teilnehmer die ausgewählt haben";
 $QuestionsAlreadyAnswered = "Betreits beantwortete Fragen";
@@ -6978,7 +6977,7 @@ CAS manage user authentication, LDAP activation isn't required.
 </div>
 <br />
 <h4>I. LDAP configuration</h4>
-<h5>Edit file main/inc/conf/auth.conf.php </h5>
+<h5>Edit file app/config/auth.conf.php </h5>
 -&gt; Edit values of array <code>&#36;extldap_config</code>
 <br />
 <br />
@@ -7004,7 +7003,7 @@ Die Array-Struktur wird in Datei main/auth/external_login/ldap.conf.php erkl&aum
 <br />
 <br />
 <h4>II. LDAP-Authentifizierung aktivieren</h4>
-<h5>In der Datei main/inc/conf/configuration.php</h5>-&gt; folgende Zeilen auskommentieren
+<h5>In der Datei app/config/configuration.php</h5>-&gt; folgende Zeilen auskommentieren
 <br />
 &#36;extAuthSource[&quot;extldap&quot;][&quot;login&quot;] =&#36;_configuration['root_sys'].&quot;main/auth/external_login/login.ldap.php&quot;;
 <br />
@@ -7046,7 +7045,7 @@ $FacebookMainActivateComment = "Zuerst muß eine Facebook Anwendung erstellt wer
 <br /><br />
 Danach die Datei
 <br /><br />
-<strong>main/inc/conf/auth.conf.php</strong>
+<strong>app/config/auth.conf.php</strong>
 <br /><br />
 öffnen und 'appId' und 'secret' für \$facebook_config aus der FB-Anwendung einfügen.
 Anschließend zu den <a href=\"/settings.php?category=Facebook\">Plugins</a> wechseln und 'Facebook Login' Button für die Plattform aktivieren.";

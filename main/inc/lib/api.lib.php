@@ -5,6 +5,7 @@ use ChamiloSession as Session;
 use Chamilo\CourseBundle\Entity\CItemProperty;
 use Chamilo\UserBundle\Entity\User;
 use Symfony\Component\Finder\Finder;
+use Chamilo\CoreBundle\Entity\SettingsCurrent;
 
 /**
  * This is a code library for Chamilo.
@@ -20,7 +21,7 @@ use Symfony\Component\Finder\Finder;
  */
 
 // PHP version requirement.
-define('REQUIRED_PHP_VERSION', '5.4');
+define('REQUIRED_PHP_VERSION', '5.5');
 define('REQUIRED_MIN_MEMORY_LIMIT', '128');
 define('REQUIRED_MIN_UPLOAD_MAX_FILESIZE', '10');
 define('REQUIRED_MIN_POST_MAX_SIZE', '10');
@@ -109,6 +110,7 @@ define('TOOL_LINK_CATEGORY', 'link_category');
 define('TOOL_COURSE_DESCRIPTION', 'course_description');
 define('TOOL_SEARCH', 'search');
 define('TOOL_LEARNPATH', 'learnpath');
+define('TOOL_LEARNPATH_CATEGORY', 'learnpath_category');
 define('TOOL_AGENDA', 'agenda');
 define('TOOL_ANNOUNCEMENT', 'announcement');
 define('TOOL_FORUM', 'forum');
@@ -1443,6 +1445,8 @@ function _api_format_user($user, $add_password = false, $loadAvatars = true)
  * @param bool $loadExtraData
  * @param bool $loadOnlyVisibleExtraData Get the user extra fields that are visible
  * @param bool $loadAvatars turn off to improve performance and if avatars are not needed.
+ * @param bool $updateCache update apc cache if exists
+ *
  * @return array $user_info user_id, lastname, firstname, username, email, etc
  * @author Patrick Cool <patrick.cool@UGent.be>
  * @author Julio Montoya
@@ -1454,7 +1458,8 @@ function api_get_user_info(
     $showPassword = false,
     $loadExtraData = false,
     $loadOnlyVisibleExtraData = false,
-    $loadAvatars = true
+    $loadAvatars = true,
+    $updateCache = false
 ) {
     $apcVar = null;
     $user = false;
@@ -1467,11 +1472,15 @@ function api_get_user_info(
             if ($cacheAvailable === true) {
                 $apcVar = api_get_configuration_value('apc_prefix').'userinfo_'.$userFromSession['user_id'];
                 if (apcu_exists($apcVar)) {
+                    if ($updateCache) {
+                        apcu_store($apcVar, $userFromSession, 60);
+                    }
                     $user = apcu_fetch($apcVar);
                 } else {
                     $user = _api_format_user($userFromSession, $showPassword, $loadAvatars);
                     apcu_store($apcVar, $user, 60);
                 }
+
             } else {
                 $user = _api_format_user($userFromSession, $showPassword, $loadAvatars);
             }
@@ -1488,7 +1497,7 @@ function api_get_user_info(
     // Re-use user information if not stale and already stored in APCu
     if ($cacheAvailable === true) {
         $apcVar = api_get_configuration_value('apc_prefix').'userinfo_'.$user_id;
-        if (apcu_exists($apcVar)) {
+        if (apcu_exists($apcVar) && $updateCache == false) {
             $user = apcu_fetch($apcVar);
 
             return $user;
@@ -1528,7 +1537,8 @@ function api_get_user_info(
         }
         $user = _api_format_user($result_array, $showPassword, $loadAvatars);
     }
-    if (!empty($cacheAvailable)) {
+
+    if ($cacheAvailable === true) {
         apcu_store($apcVar, $user, 60);
     }
 
@@ -1656,6 +1666,12 @@ function api_get_course_setting($setting_name, $course_code = null)
         $res = Database::query($sql);
         if (Database::num_rows($res) > 0) {
             $row = Database::fetch_array($res);
+            if ($setting_name === 'email_alert_manager_on_new_quiz') {
+                if (!is_null($row['value'])) {
+                    $result = explode(',', $row['value']);
+                    $row['value'] = $result;
+                }
+            }
             return $row['value'];
         }
     }
@@ -5335,119 +5351,76 @@ function &api_get_settings($cat = null, $ordering = 'list', $access_url = 1, $ur
 }
 
 /**
- * Sets a platform configuration setting to a given value
- * @param string    The value we want to record
- * @param string    The variable name we want to insert
- * @param string    The subkey for the variable we want to insert
- * @param string    The type for the variable we want to insert
- * @param string    The category for the variable we want to insert
- * @param string    The title
- * @param string    The comment
- * @param string    The scope
- * @param string    The subkey text
- * @param int       The access_url for which this parameter is valid
- * @param int       The changeability of this setting for non-master urls
- * @param string $val
- * @param string $var
- * @param string $sk
- * @param string $c
- * @return boolean  true on success, false on failure
+ * @param string $value The value we want to record
+ * @param string $variable The variable name we want to insert
+ * @param string $subKey The subkey for the variable we want to insert
+ * @param string $type The type for the variable we want to insert
+ * @param string $category The category for the variable we want to insert
+ * @param string $title The title
+ * @param string $comment The comment
+ * @param string $scope The scope
+ * @param string $subKeyText The subkey text
+ * @param int $accessUrlId The access_url for which this parameter is valid
+ * @param int $visiblity The changeability of this setting for non-master urls
+ * @return int The setting ID
  */
 function api_add_setting(
-    $val,
-    $var,
-    $sk = null,
+    $value,
+    $variable,
+    $subKey = null,
     $type = 'textfield',
-    $c = null,
-    $title = '',
-    $com = '',
-    $sc = null,
-    $skt = null,
-    $a = 1,
-    $v = 0
+    $category = null,
+    $title = null,
+    $comment = null,
+    $scope = null,
+    $subKeyText = null,
+    $accessUrlId = 1,
+    $visiblity = 0
 ) {
-    if (empty($var) || !isset($val)) { return false; }
-    $t_settings = Database::get_main_table(TABLE_MAIN_SETTINGS_CURRENT);
-    $var = Database::escape_string($var);
-    $val = Database::escape_string($val);
-    $a = (int) $a;
-    if (empty($a)) { $a = 1; }
+    $em = Database::getManager();
+    $settingRepo = $em->getRepository('ChamiloCoreBundle:SettingsCurrent');
+
+    $accessUrlId = (int) $accessUrlId ?: 1;
+
+    $criteria = ['variable' => $variable, 'accessUrl' => $accessUrlId];
+
+    if (!empty($subKey)) {
+        $criteria['subkey'] = $subKey;
+    }
+
     // Check if this variable doesn't exist already
-    $select = "SELECT id FROM $t_settings WHERE variable = '$var' ";
-    if (!empty($sk)) {
-        $sk = Database::escape_string($sk);
-        $select .= " AND subkey = '$sk'";
-    }
-    if ($a > 1) {
-        $select .= " AND access_url = $a";
-    } else {
-        $select .= " AND access_url = 1 ";
-    }
-    $res = Database::query($select);
-    if (Database::num_rows($res) > 0) { // Found item for this access_url.
-        $row = Database::fetch_array($res);
-        Database::update(
-            $t_settings,
-            array('selected_value' => $val),
-            array('id = ?' => array($row['id']))
-        );
-        return $row['id'];
+    /** @var SettingsCurrent $setting */
+    $setting = $settingRepo->findOneBy($criteria);
+
+    if ($setting) {
+        $setting->setSelectedValue($value);
+
+        $em->persist($setting);
+        $em->flush();
+
+        return $setting->getId();
     }
 
     // Item not found for this access_url, we have to check if the whole thing is missing
     // (in which case we ignore the insert) or if there *is* a record but just for access_url = 1
-    $insert = "INSERT INTO $t_settings ".
-                "(variable,selected_value,".
-                "type,category,".
-                "subkey,title,".
-                "comment,scope,".
-                "subkeytext,access_url,access_url_changeable)".
-                " VALUES ('$var','$val',";
-    if (isset($type)) {
-        $type = Database::escape_string($type);
-        $insert .= "'$type',";
-    } else {
-        $insert .= "NULL,";
-    }
-    if (isset($c)) { // Category
-        $c = Database::escape_string($c);
-        $insert .= "'$c',";
-    } else {
-        $insert .= "NULL,";
-    }
-    if (isset($sk)) { // Subkey
-        $sk = Database::escape_string($sk);
-        $insert .= "'$sk',";
-    } else {
-        $insert .= "NULL,";
-    }
-    if (isset($title)) { // Title
-        $title = Database::escape_string($title);
-        $insert .= "'$title',";
-    } else {
-        $insert .= "NULL,";
-    }
-    if (isset($com)) { // Comment
-        $com = Database::escape_string($com);
-        $insert .= "'$com',";
-    } else {
-        $insert .= "NULL,";
-    }
-    if (isset($sc)) { // Scope
-        $sc = Database::escape_string($sc);
-        $insert .= "'$sc',";
-    } else {
-        $insert .= "NULL,";
-    }
-    if (isset($skt)) { // Subkey text
-        $skt = Database::escape_string($skt);
-        $insert .= "'$skt',";
-    } else {
-        $insert .= "NULL,";
-    }
-    $insert .= "$a,$v)";
-    $res = Database::query($insert);
-    return $res;
+    $setting = new SettingsCurrent();
+    $setting
+        ->setVariable($variable)
+        ->setSelectedValue($value)
+        ->setType($type)
+        ->setCategory($category)
+        ->setSubkey($subKey)
+        ->setTitle($title)
+        ->setComment($comment)
+        ->setScope($scope)
+        ->setSubkeytext($subKeyText)
+        ->setAccessUrl($accessUrlId)
+        ->setAccessUrlChangeable($visiblity);
+
+    $em->persist($setting);
+    $em->flush();
+
+    return $setting->getId();
 }
 
 /**
@@ -7611,6 +7584,11 @@ function api_get_configuration_value($variable)
             // Check if it exists for the sub portal
             if (array_key_exists($urlId, $_configuration[$variable])) {
                 return $_configuration[$variable][$urlId];
+            } else {
+                // Try to found element with id = 1 (master portal)
+                if (array_key_exists(1, $_configuration[$variable])) {
+                    return $_configuration[$variable][1];
+                }
             }
         }
 

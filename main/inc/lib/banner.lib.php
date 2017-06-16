@@ -167,7 +167,17 @@ function getCustomTabs()
     $result = Database::query($sql);
     $customTabs = array();
     while ($row = Database::fetch_assoc($result)) {
-        $customTabs[] = $row;
+        $shouldAdd = true;
+
+        if (strpos($row['subkey'], Plugin::TAB_FILTER_NO_STUDENT) !== false && api_is_student()) {
+            $shouldAdd = false;
+        } elseif (strpos($row['subkey'], Plugin::TAB_FILTER_ONLY_STUDENT) !== false && !api_is_student()) {
+            $shouldAdd = false;
+        }
+
+        if ($shouldAdd) {
+            $customTabs[] = $row;
+        }
     }
 
     return $customTabs;
@@ -343,9 +353,16 @@ function return_navigation_array()
         if (true) {
             $params = array('variable = ? AND subkey = ?' => ['status', 'studentfollowup']);
             $result = api_get_settings_params_simple($params);
+            $plugin = StudentFollowUpPlugin::create();
             if (!empty($result) && $result['selected_value'] === 'installed') {
-                $navigation['follow_up']['url'] = api_get_path(WEB_PLUGIN_PATH).'studentfollowup/post.php';
-                $navigation['follow_up']['title'] = get_lang('CareSystem');
+                // Students
+                $url = api_get_path(WEB_PLUGIN_PATH).'studentfollowup/posts.php';
+
+                if (api_is_platform_admin() || api_is_drh() || api_is_teacher()) {
+                    $url = api_get_path(WEB_PLUGIN_PATH).'studentfollowup/my_students.php';
+                }
+                $navigation['follow_up']['url'] = $url;
+                $navigation['follow_up']['title'] = $plugin->get_lang('CareDetailView');
                 $navigation['follow_up']['key'] = 'homepage';
                 $navigation['follow_up']['icon'] = 'homepage.png';
             }
@@ -363,8 +380,7 @@ function return_navigation_array()
         // Reports
         if (!empty($possible_tabs['reports'])) {
             if (api_get_setting('show_tabs', 'reports') == 'true') {
-                if (
-                    (api_is_platform_admin() || api_is_drh() || api_is_session_admin())
+                if ((api_is_platform_admin() || api_is_drh() || api_is_session_admin())
                         && Rights::hasRight('show_tabs:reports')
                 ) {
                     $navigation['reports'] = $possible_tabs['reports'];

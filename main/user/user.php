@@ -217,8 +217,11 @@ if (api_is_allowed_to_edit(null, true)) {
                     if (api_is_multiple_url_enabled()) {
                         $sql .= ' , '.Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_USER).' au ';
                     }
-                    $sql .= " WHERE c_id = '$courseId' AND session_course_user.user_id = user.user_id ";
-                    $sql .= ' AND session_id = '.$sessionId;
+                    $sql .= "
+                        WHERE c_id = $courseId
+                            AND session_course_user.user_id = user.user_id
+                            AND session_id = $sessionId
+                    ";
 
                     if (api_is_multiple_url_enabled()) {
                         $sql .= " AND user.user_id = au.user_id AND access_url_id =  $current_access_url_id  ";
@@ -489,9 +492,8 @@ $table->set_header($header_nr++, '', false);
 
 $indexList['photo'] = $header_nr;
 $table->set_header($header_nr++, get_lang('Photo'), false);
-
-$table->set_header($header_nr++, get_lang('OfficialCode'));
 $indexList['official_code'] = $header_nr;
+$table->set_header($header_nr++, get_lang('OfficialCode'));
 
 if ($is_western_name_order) {
     $indexList['firstname'] = $header_nr;
@@ -512,6 +514,7 @@ $table->set_header($header_nr++, get_lang('GroupSingle'), false);
 $hideFields = api_get_configuration_value('hide_user_field_from_list');
 
 if (!empty($hideFields)) {
+    $hideFields = $hideFields['fields'];
     foreach ($hideFields as $fieldToHide) {
         if (isset($indexList[$fieldToHide])) {
             $table->setHideColumn($indexList[$fieldToHide]);

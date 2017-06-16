@@ -166,11 +166,20 @@ class Database
             function ($class) use ($sysPath) {
                 $file = str_replace("\\", DIRECTORY_SEPARATOR, $class).".php";
                 $file = str_replace('Symfony/Component/Validator', '', $file);
-                $file = $sysPath.'vendor/symfony/validator'.$file;
+                $file = str_replace('Symfony\Component\Validator', '', $file);
+                $fileToInclude = $sysPath.'vendor/symfony/validator/'.$file;
 
-                if (file_exists($file)) {
+                if (file_exists($fileToInclude)) {
                     // file exists makes sure that the loader fails silently
-                    require_once $file;
+                    require_once $fileToInclude;
+
+                    return true;
+                }
+
+                $fileToInclude = $sysPath.'vendor/symfony/validator/Constraints/'.$file;
+                if (file_exists($fileToInclude)) {
+                    // file exists makes sure that the loader fails silently
+                    require_once $fileToInclude;
 
                     return true;
                 }
@@ -554,10 +563,11 @@ class Database
     }
 
     /**
-     * Parses WHERE/ORDER conditions i.e array('where'=>array('id = ?' =>'4'), 'order'=>'id DESC'))
+     * Parses WHERE/ORDER conditions i.e array('where'=>array('id = ?' =>'4'), 'order'=>'id DESC')
      * @todo known issues, it doesn't work when using
      * LIKE conditions example: array('where'=>array('course_code LIKE "?%"'))
      * @param   array $conditions
+     * @return string Partial SQL string to add to longer query
      */
     public static function parse_conditions($conditions)
     {

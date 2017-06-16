@@ -389,10 +389,11 @@ class UserManager
                 UrlManager::add_user_to_url($userId, 1);
             }
 
+            $extra['item_id'] = $userId;
+
             if (is_array($extra) && count($extra) > 0) {
-                foreach ($extra as $fname => $fvalue) {
-                    self::update_extra_field_value($userId, $fname, $fvalue);
-                }
+                $courseFieldValue = new ExtraFieldValue('user');
+                $courseFieldValue->saveFieldValues($extra);
             } else {
                 // Create notify settings by default
                 self::update_extra_field_value($userId, 'mail_notify_invitation', '1');
@@ -2652,6 +2653,9 @@ class UserManager
         // Get the list of sessions per user
         $now = new DateTime('now', new DateTimeZone('UTC'));
 
+        // LEFT JOIN is used for session_rel_course_rel_user because an inner
+        // join would not catch session-courses where the user is general
+        // session coach but which do not have students nor coaches registered
         $dql = "SELECT DISTINCT
                     s.id,
                     s.name,
@@ -2664,7 +2668,7 @@ class UserManager
                     s.coachAccessStartDate AS coach_access_start_date,
                     s.coachAccessEndDate AS coach_access_end_date
                 FROM ChamiloCoreBundle:Session AS s
-                INNER JOIN ChamiloCoreBundle:SessionRelCourseRelUser AS scu WITH scu.session = s
+                LEFT JOIN ChamiloCoreBundle:SessionRelCourseRelUser AS scu WITH scu.session = s
                 INNER JOIN ChamiloCoreBundle:AccessUrlRelSession AS url WITH url.sessionId = s.id
                 LEFT JOIN ChamiloCoreBundle:SessionCategory AS sc WITH s.category = sc
                 WHERE (scu.user = :user OR s.generalCoach = :user) AND url.accessUrlId = :url
@@ -3475,7 +3479,7 @@ class UserManager
         $return = array();
         if (Database::num_rows($result) > 0) {
             while ($row = Database::fetch_array($result, 'ASSOC')) {
-                $return[] = array('key' => $row['tag'], 'value' => $row['tag']);
+                $return[] = array('id' => $row['tag'], 'text' => $row['tag']);
             }
         }
         if ($return_format === 'json') {
@@ -4958,27 +4962,6 @@ class UserManager
             $lastConnectionDate,
             STUDENT_BOSS
         );
-    }
-
-    /**
-     * Get the teacher (users with COURSEMANGER status) list
-     * @return array The list
-     */
-    public static function getTeachersList()
-    {
-        $userTable = Database::get_main_table(TABLE_MAIN_USER);
-
-        $resultData = Database::select('user_id, lastname, firstname, username', $userTable, array(
-            'where' => array(
-                'status = ?' => COURSEMANAGER
-            )
-        ));
-
-        foreach ($resultData as &$teacherData) {
-            $teacherData['completeName'] = api_get_person_name($teacherData['firstname'], $teacherData['lastname']);
-        }
-
-        return $resultData;
     }
 
     /**

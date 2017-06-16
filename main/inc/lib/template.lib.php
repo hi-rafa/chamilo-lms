@@ -427,6 +427,7 @@ class Template
         $show_course_navigation_menu = null;
 
         if (!empty($this->course_id) && $this->user_is_logged_in) {
+
             if (api_get_setting('show_toolshortcuts') != 'false') {
                 //Course toolbar
                 $show_course_shortcut = CourseHome::show_navigation_tool_shortcuts();
@@ -525,9 +526,13 @@ class Template
     /**
      * Set system parameters
      */
-    private function set_system_parameters()
+    public function set_system_parameters()
     {
         $this->theme = api_get_visual_theme();
+        if (!empty($this->preview_theme)) {
+            $this->theme = $this->preview_theme;
+        }
+
         $this->themeDir = self::getThemeDir($this->theme);
 
         // Setting app paths/URLs
@@ -572,11 +577,6 @@ class Template
     {
         global $disable_js_and_css_files;
         $css = array();
-        $this->theme = api_get_visual_theme();
-
-        if (!empty($this->preview_theme)) {
-            $this->theme = $this->preview_theme;
-        }
 
         // Default CSS Bootstrap
         $bowerCSSFiles = [
@@ -1065,6 +1065,8 @@ class Template
             );
         }
 
+        self::addHTTPSecurityHeaders();
+
         $socialMeta = '';
         $metaTitle = api_get_setting('meta_title');
         if (!empty($metaTitle)) {
@@ -1490,5 +1492,59 @@ class Template
         ];
 
         $this->assign('_admin', $_admin);
+    }
+
+    /**
+     * Manage specific HTTP headers security
+     * @return void (prints headers directly)
+     */
+    private function addHTTPSecurityHeaders() {
+        // Implementation of HTTP headers security, as suggested and checked
+        // by https://securityheaders.io/
+        // Enable these settings in configuration.php to use them on your site
+        // Strict-Transport-Security
+        $setting = api_get_configuration_value('security_strict_transport');
+        if (!empty($setting)) {
+            header('Strict-Transport-Security: '.$setting);
+        }
+        // Content-Security-Policy
+        $setting = api_get_configuration_value('security_content_policy');
+        if (!empty($setting)) {
+            header('Content-Security-Policy: '.$setting);
+        }
+        $setting = api_get_configuration_value('security_content_policy_report_only');
+        if (!empty($setting)) {
+            header('Content-Security-Policy-Report-Only: '.$setting);
+        }
+        // Public-Key-Pins
+        $setting = api_get_configuration_value('security_public_key_pins');
+        if (!empty($setting)) {
+            header('Public-Key-Pins: '.$setting);
+        }
+        $setting = api_get_configuration_value('security_public_key_pins_report_only');
+        if (!empty($setting)) {
+            header('Public-Key-Pins-Report-Only: '.$setting);
+        }
+        // X-Frame-Options
+        $setting = api_get_configuration_value('security_x_frame_options');
+        if (!empty($setting)) {
+            header('X-Frame-Options: '.$setting);
+        }
+        // X-XSS-Protection
+        $setting = api_get_configuration_value('security_xss_protection');
+        if (!empty($setting)) {
+            header('X-XSS-Protection: '.$setting);
+        }
+        // X-Content-Type-Options
+        $setting = api_get_configuration_value('security_x_content_type_options');
+        if (!empty($setting)) {
+            header('X-Content-Type-Options: '.$setting);
+        }
+        // Referrer-Policy
+        $setting = api_get_configuration_value('security_referrer_policy');
+        if (!empty($setting)) {
+            header('Referrer-Policy: '.$setting);
+        }
+        // end of HTTP headers security block
     }
 }

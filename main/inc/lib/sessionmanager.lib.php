@@ -6,11 +6,14 @@ use \ExtraField as ExtraFieldModel;
 use Chamilo\CoreBundle\Entity\ExtraField;
 use Chamilo\CoreBundle\Entity\Session;
 use Chamilo\CoreBundle\Entity\SequenceResource;
+use Chamilo\CoreBundle\Entity\SessionRelUser;
+use Chamilo\CoreBundle\Entity\Course;
 
 /**
  * Class SessionManager
  *
- * This is the session library for Chamilo.
+ * This is the session library for Chamilo
+ * (as in courses>session, not as in PHP session)
  * All main sessions functions should be placed here.
  * This class provides methods for sessions management.
  * Include/require it in your code to use its features.
@@ -1967,10 +1970,9 @@ class SessionManager
         $status = null
     ) {
         $sessionId = intval($sessionId);
-        $courseCode = $courseInfo['code'];
         $courseId = $courseInfo['real_id'];
 
-        if (empty($sessionId) || empty($courseCode)) {
+        if (empty($sessionId) || empty($courseId)) {
             return array();
         }
 
@@ -1989,6 +1991,59 @@ class SessionManager
                     c_id = $courseId
                     $statusCondition
                 ";
+
+        $result = Database::query($sql);
+        $existingUsers = array();
+        while ($row = Database::fetch_array($result)) {
+            $existingUsers[] = $row['user_id'];
+        }
+
+        return $existingUsers;
+    }
+
+     /**
+     * Returns user list of the current users subscribed in the course-session
+     * @param array $sessionList
+     * @param array $courseList
+     * @param int $status
+     * @param int $start
+     * @param int $limit
+     *
+     * @return array
+     */
+    public static function getUsersByCourseAndSessionList(
+        $sessionList,
+        $courseList,
+        $status = null,
+        $start = null,
+        $limit = null
+    ) {
+        if (empty($sessionList) || empty($courseList)) {
+            return [];
+        }
+        $sessionListToString = implode("','", $sessionList);
+        $courseListToString = implode("','", $courseList);
+
+        $statusCondition = null;
+        if (isset($status) && !is_null($status)) {
+            $status = intval($status);
+            $statusCondition = " AND status = $status";
+        }
+
+        $table = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
+
+        $sql = "SELECT DISTINCT user_id
+                FROM $table
+                WHERE
+                    session_id IN ('$sessionListToString') AND
+                    c_id IN ('$courseListToString')
+                    $statusCondition
+                ";
+        if (!is_null($start) && !is_null($limit)) {
+            $start = (int) $start;
+            $limit = (int) $limit;
+            $sql .= "LIMIT $start, $limit";
+        }
         $result = Database::query($sql);
         $existingUsers = array();
         while ($row = Database::fetch_array($result)) {
@@ -2563,15 +2618,17 @@ class SessionManager
      * @param	string	$variable Field's internal variable name
      * @param	int		$fieldType Field's type
      * @param	string	$displayText Field's language var name
+     * @param   string  $default    Field's default value
      * @return int     new extra field id
      */
-    public static function create_session_extra_field($variable, $fieldType, $displayText)
+    public static function create_session_extra_field($variable, $fieldType, $displayText, $default = '')
     {
         $extraField = new ExtraFieldModel('session');
         $params = [
             'variable' => $variable,
             'field_type' => $fieldType,
             'display_text' => $displayText,
+            'default_value' => $default
         ];
 
         return $extraField->save($params);
@@ -3315,7 +3372,7 @@ class SessionManager
     /**
      * Get sessions followed by human resources manager
      * @param int $userId
-     * @param int $status Optional
+     * @param int $status DRH Optional
      * @param int $start
      * @param int $limit
      * @param bool $getCount
@@ -3344,10 +3401,9 @@ class SessionManager
         $tbl_session_rel_course_rel_user = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
         $tbl_session_rel_access_url = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_SESSION);
 
-        $userId = intval($userId);
+        $userId = (int) $userId;
 
         $select = " SELECT DISTINCT * ";
-
         if ($getCount) {
             $select = " SELECT count(DISTINCT(s.id)) as count ";
         }
@@ -3357,7 +3413,7 @@ class SessionManager
         }
 
         $limitCondition = null;
-        if (!empty($start) && !empty($limit)) {
+        if (!is_null($start) && !is_null($limit)) {
             $limitCondition = " LIMIT ".intval($start).", ".intval($limit);
         }
 
@@ -3368,7 +3424,7 @@ class SessionManager
         $whereConditions = null;
         $sessionCourseConditions = null;
         $sessionConditions = null;
-        $sessionQuery = null;
+        $sessionQuery = '';
         $courseSessionQuery = null;
 
         switch ($status) {
@@ -3412,7 +3468,8 @@ class SessionManager
         $subQuery = $sessionQuery.$courseSessionQuery;
 
         $sql = " $select FROM $tbl_session s
-                INNER JOIN $tbl_session_rel_access_url a ON (s.id = a.session_id)
+                INNER JOIN $tbl_session_rel_access_url a 
+                ON (s.id = a.session_id)
                 WHERE
                     access_url_id = ".api_get_current_access_url_id()." AND
                     s.id IN (
@@ -3769,7 +3826,10 @@ class SessionManager
         $tbl_session_rel_user = Database::get_main_table(TABLE_MAIN_SESSION_USER);
         $table_access_url_user = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_USER);
 
-        $selectedField = 'u.user_id,lastname, firstname, username, relation_type, access_url_id';
+        $selectedField = '
+            u.user_id, u.lastname, u.firstname, u.username, su.relation_type, au.access_url_id,
+            su.moved_to, su.moved_status, su.moved_at
+        ';
 
         if ($getCount) {
             $selectedField = 'count(1) AS count';
@@ -3777,23 +3837,23 @@ class SessionManager
 
         $sql = "SELECT $selectedField
                 FROM $tbl_user u
-                INNER JOIN $tbl_session_rel_user
-                ON u.user_id = $tbl_session_rel_user.user_id AND
-                $tbl_session_rel_user.session_id = $id
-                LEFT OUTER JOIN $table_access_url_user uu
-                ON (uu.user_id = u.user_id)
+                INNER JOIN $tbl_session_rel_user su
+                ON u.user_id = su.user_id AND
+                su.session_id = $id
+                LEFT OUTER JOIN $table_access_url_user au
+                ON (au.user_id = u.user_id)
                 ";
 
         $urlId = api_get_current_access_url_id();
         if (isset($status) && $status != '') {
             $status = intval($status);
-            $sql .= " WHERE relation_type = $status AND (access_url_id = $urlId OR access_url_id is null )";
+            $sql .= " WHERE su.relation_type = $status AND (au.access_url_id = $urlId OR su.access_url_id is null )";
         } else {
-            $sql .= " WHERE (access_url_id = $urlId OR access_url_id is null )";
+            $sql .= " WHERE (au.access_url_id = $urlId OR au.access_url_id is null )";
         }
 
-        $sql .= " ORDER BY relation_type, ";
-        $sql .= api_sort_by_first_name() ? ' firstname, lastname' : '  lastname, firstname';
+        $sql .= " ORDER BY su.relation_type, ";
+        $sql .= api_sort_by_first_name() ? ' u.firstname, u.lastname' : '  u.lastname, u.firstname';
 
         $result = Database::query($sql);
         if ($getCount) {
@@ -3892,32 +3952,23 @@ class SessionManager
 
     /**
      * Gets user status within a session
-     * @param int $user_id
-     * @param int $courseId
-     * @param $session_id
-     * @return int
-     * @assert (null,null,null) === false
+     *
+     * @param int $userId
+     * @param int $sessionId
+     *
+     * @return \Chamilo\CoreBundle\Entity\SessionRelUser
      */
-    public static function get_user_status_in_session($user_id, $courseId, $session_id)
+    public static function getUserStatusInSession($userId, $sessionId)
     {
-        if (empty($user_id) or empty($courseId) or empty($session_id)) {
-            return false;
-        }
-        $tbl_session_rel_course_rel_user = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
-        $tbl_user = Database::get_main_table(TABLE_MAIN_USER);
-        $sql = "SELECT session_rcru.status
-                FROM $tbl_session_rel_course_rel_user session_rcru, $tbl_user user
-                WHERE session_rcru.user_id = user.user_id AND
-                    session_rcru.session_id = '".intval($session_id)."' AND
-                    session_rcru.c_id ='" . intval($courseId)."' AND
-                    user.user_id = " . intval($user_id);
-        $result = Database::query($sql);
-        $status = false;
-        if (Database::num_rows($result)) {
-            $status = Database::fetch_row($result);
-            $status = $status['0'];
-        }
-        return $status;
+        $em = Database::getManager();
+        $subscriptions = $em
+            ->getRepository('ChamiloCoreBundle:SessionRelUser')
+            ->findBy(['session' => $sessionId, 'user' => $userId]);
+
+        /** @var SessionRelUser $subscription */
+        $subscription = current($subscriptions);
+
+        return $subscription;
     }
 
     /**
@@ -4293,11 +4344,23 @@ class SessionManager
     {
         $table_session_course = Database::get_main_table(TABLE_MAIN_SESSION_COURSE);
         $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
+        $url = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_SESSION);
         $courseId = intval($courseId);
+        $urlId = api_get_current_access_url_id();
+
+        if (empty($courseId)) {
+            return [];
+        }
+
         $sql = "SELECT name, s.id
                 FROM $table_session_course sc
-                INNER JOIN $table_session s ON (sc.session_id = s.id)
-                WHERE sc.c_id = '$courseId' ";
+                INNER JOIN $table_session s 
+                ON (sc.session_id = s.id)
+                INNER JOIN $url u
+                ON (u.session_id = s.id)
+                WHERE 
+                    u.access_url_id = $urlId AND 
+                    sc.c_id = '$courseId' ";
         $result = Database::query($sql);
 
         return Database::store_result($result);
@@ -4402,7 +4465,6 @@ class SessionManager
             $error_message = get_lang('NotCSV');
         } else {
             $tag_names = array();
-
             foreach ($content as $key => $enreg) {
                 $enreg = explode(';', trim($enreg));
                 if ($key) {
@@ -4596,7 +4658,6 @@ class SessionManager
                     }
 
                     if ($my_session_result === false) {
-
                         // Creating a session.
                         $sql = "INSERT IGNORE INTO $tbl_session SET
                                 name = '$session_name',
@@ -8434,5 +8495,32 @@ class SessionManager
                 }
             }
         }
+    }
+
+    /**
+     * @param \Chamilo\CoreBundle\Entity\Course $course
+     * @param \Chamilo\CoreBundle\Entity\Session $session
+     * @return int
+     */
+    public static function getCountUsersInCourseSession(Course $course, Session $session)
+    {
+        return Database::getManager()
+            ->createQuery("
+                SELECT COUNT(scu)
+                FROM ChamiloCoreBundle:SessionRelCourseRelUser scu
+                INNER JOIN ChamiloCoreBundle:SessionRelUser su
+                    WITH scu.user = su.user
+                    AND scu.session = su.session
+                WHERE scu.course = :course
+                    AND su.relationType != :rrhh
+                    AND scu.session = :session
+            ")
+            ->setParameters([
+                'course' => $course->getId(),
+                'rrhh' => SESSION_RELATION_TYPE_RRHH,
+                'session' => $session->getId()
+            ])
+            ->getSingleScalarResult();
+
     }
 }
